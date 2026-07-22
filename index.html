@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="PuzzleForge – Transformez vos photos en puzzles interactifs">
+<meta name="theme-color" content="#12151d">
+<title>PuzzleForge — Créez vos puzzles</title>
+<style>
+  :root{
+    --bg-0:#0b0d12;
+    --bg-1:#12151d;
+    --bg-2:#1a1e29;
+    --accent:#7c5cff;
+    --accent-2:#33d1c9;
+    --text-0:#f2f3f7;
+    --text-1:#9aa0b4;
+    --danger:#ff5c72;
+    --success:#33d17a;
+    --radius:16px;
+    --shadow: 0 10px 30px rgba(0,0,0,0.45);
+    --tray-piece-size: 48px;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(124,92,255,0.15), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, rgba(51,209,201,0.12), transparent 60%),
+      var(--bg-0);
+    color:var(--text-0);
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  .wrap{ max-width:1200px; margin:0 auto; padding:28px 20px 100px; }
+
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:24px; flex-wrap:wrap; gap:16px;
+  }
+  .logo{ display:flex; align-items:center; gap:12px; font-size:24px; font-weight:700; letter-spacing:0.5px; }
+  .logo .dot{
+    width:14px;height:14px;border-radius:4px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    transform:rotate(20deg);
+    box-shadow:0 0 20px rgba(124,92,255,0.6);
+    transition: transform 0.3s ease;
+  }
+  .logo:hover .dot { transform: rotate(110deg) scale(1.1); }
+  .header-right{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  .subtitle{color:var(--text-1);font-size:14px;}
+
+  .settings-btn{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:40px; height:40px; border-radius:50%;
+    background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+    color:var(--text-0); cursor:pointer; transition:all 0.2s ease;
+  }
+  .settings-btn:hover{ background:rgba(255,255,255,0.1); transform:translateY(-2px); }
+  .settings-btn svg{ width:20px; height:20px; }
+
+  .icon-svg{ width:1.2em; height:1.2em; display:inline-block; vertical-align:middle; fill:currentColor; }
+
+  .card{
+    background:linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:36px;
+    margin-bottom:28px;
+    animation: fadeInCard 0.4s ease-out;
+  }
+  @keyframes fadeInCard {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card h2{ margin:0 0 18px; font-size:18px; display:flex;align-items:center;gap:8px; }
+  .card h2 .num{
+    width:26px;height:26px;border-radius:50%;
+    background:rgba(124,92,255,0.15); color:var(--accent);
+    display:flex;align-items:center;justify-content:center; font-size:13px;font-weight:700;
+  }
+
+  .tabs{ display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .tab-btn{
+    background:transparent; border:none; color:var(--text-1);
+    padding:12px 18px; font-size:14.5px; font-weight:600; cursor:pointer;
+    border-bottom:2px solid transparent; transition: all 0.25s ease;
+  }
+  .tab-btn:hover:not(:disabled){ color:var(--text-0); transform: translateY(-1px); }
+  .tab-btn.active{ color:var(--text-0); border-bottom-color:var(--accent); }
+  .tab-btn:disabled{ opacity:0.35; cursor:not-allowed; }
+  
+  .tab-content{ display:none; opacity: 0; transform: translateY(10px); transition: all 0.3s ease; }
+  .tab-content.active{ display:block; opacity: 1; transform: translateY(0); }
+
+  .dropzone{
+    border:2px dashed rgba(255,255,255,0.14); border-radius:12px;
+    padding:48px 32px; text-align:center; cursor:pointer;
+    transition: all 0.25s ease; position:relative; background:rgba(255,255,255,0.015);
+    display:block;
+  }
+  .dropzone:hover, .dropzone.drag{ border-color:var(--accent); background:rgba(124,92,255,0.06); transform: scale(1.01); }
+  .dropzone input{display:none;}
+  .dropzone .icon-wrap{font-size:48px;margin-bottom:16px;opacity:0.8; color:var(--accent); transition: transform 0.3s ease;}
+  .dropzone:hover .icon-wrap { transform: translateY(-4px); }
+  .dropzone .txt{color:var(--text-1);font-size:15px;line-height:1.5;}
+  .dropzone .txt b{color:var(--text-0);}
+
+  .preview-row{ display:flex;gap:24px;align-items:flex-start;margin-top:24px;flex-wrap:wrap; }
+  .preview-thumb{
+    width:160px;height:160px;border-radius:12px;overflow:hidden;
+    border:1px solid rgba(255,255,255,0.08); flex-shrink:0; background:var(--bg-0);
+  }
+  .preview-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+
+  .diffs{ display:grid; grid-template-columns:repeat(auto-fit, minmax(120px,1fr)); gap:12px; flex:1; }
+  .diff-opt{
+    border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 12px;
+    text-align:center; cursor:pointer; transition:all 0.2s ease; background:rgba(255,255,255,0.02);
+  }
+  .diff-opt:hover{border-color:rgba(124,92,255,0.5); transform: translateY(-2px);}
+  .diff-opt.active{
+    border-color:var(--accent); background:rgba(124,92,255,0.12);
+    box-shadow:0 0 0 1px var(--accent) inset;
+  }
+  .diff-opt .grid-size{font-weight:700;font-size:16px;}
+  .diff-opt .grid-label{font-size:12px;color:var(--text-1);margin-top:2px;}
+
+  .actions{margin-top:28px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;}
+  .btn-primary, .btn-secondary, .btn-danger, .btn-ghost{
+    font-family:inherit; border:none; border-radius:10px; padding:14px 26px;
+    font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space:nowrap;
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+  }
+  .btn-primary{
+    background:linear-gradient(135deg,var(--accent),#9b7dff); color:white;
+    box-shadow:0 6px 18px rgba(124,92,255,0.35);
+  }
+  .btn-primary:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 22px rgba(124,92,255,0.5);}
+  .btn-primary:active:not(:disabled){transform:translateY(0);}
+  .btn-primary:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none;}
+  .btn-secondary{ background:rgba(255,255,255,0.06); color:var(--text-0); border:1px solid rgba(255,255,255,0.1); }
+  .btn-secondary:hover{background:rgba(255,255,255,0.1); transform: translateY(-1px);}
+  .btn-ghost{ background:transparent; color:var(--text-1); border:1px solid rgba(255,255,255,0.1); padding:8px 14px; font-size:13px; }
+  .btn-ghost:hover{ color:var(--text-0); border-color:rgba(255,255,255,0.25); transform: translateY(-1px);}
+  .btn-danger{
+    background:rgba(255,92,114,0.12); color:var(--danger); border:1px solid rgba(255,92,114,0.3);
+  }
+  .btn-danger:hover{background:rgba(255,92,114,0.22); transform: translateY(-1px);}
+
+  /* ---- Play tab ---- */
+  .play-top{
+    display:flex;justify-content:space-between;align-items:center;
+    flex-wrap:wrap;gap:12px;
+  }
+  .stats{display:flex;gap:16px;color:var(--text-1);font-size:13px;flex-wrap:wrap;}
+  .stats b{color:var(--text-0);font-size:15px;}
+
+  .play-header{ margin-bottom: 24px; }
+  .progress-bar{
+    width:100%; height:6px; border-radius:3px; background:rgba(255,255,255,0.06);
+    overflow:hidden; margin-top:16px;
+  }
+  .progress-fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-2)); transition:width 0.25s ease; }
+
+  .play-section{ display:flex; flex-direction:column; gap:12px; min-height:500px; }
+  .play-content{
+    display:flex; flex-direction:column; gap:12px; flex:1; padding:0;
+    max-width:100%;
+  }
+
+  .tray-panel{
+    width:100%; flex-shrink:0;
+    background:rgba(0,0,0,0.25);
+    border:1px solid rgba(255,255,255,0.06);
+    border-radius:12px; padding:10px;
+    overflow-y:auto; overflow-x:hidden;
+    min-height:100px; max-height:150px;
+    transition: max-height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .tray-panel.expanded{ max-height:min(420px, 50vh); }
+  .tray-panel::-webkit-scrollbar{ width:8px; }
+  .tray-panel::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.15); border-radius:4px; }
+
+  .tray-header{
+    display:flex; align-items:center; justify-content:space-between;
+    margin:2px 4px 8px; gap:8px; flex-wrap:wrap;
+  }
+  .tray-header h3{ margin:0; font-size:12px; color:var(--text-1); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+  .tray-header h3 span{ color:var(--text-0); font-weight:700; text-transform:none; letter-spacing:0; }
+
+  .tray{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-start; align-items:flex-start; }
+  .tray .piece{ width:var(--tray-piece-size); height:var(--tray-piece-size); }
+
+  .assembly-wrap{ width:100%; flex:1; display:flex; justify-content:center; align-items:center; overflow:visible; padding:10px 0; }
+
+  .assembly-zone{
+    position:relative;
+    background:rgba(0,0,0,0.35);
+    border:1px solid rgba(255,255,255,0.08);
+    border-radius:12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5) inset;
+    overflow:hidden;
+    flex-shrink:0;
+  }
+  .assembly-guide{
+    position:absolute; inset:0; opacity:0.12;
+    background-size:cover; background-position:center;
+    pointer-events:none;
+  }
+
+  .assembly-grid{
+    position:absolute; inset:0; pointer-events:none; opacity:0;
+    transition: opacity 0.15s ease;
+    z-index:5;
+  }
+  .assembly-grid.show{ opacity:1; }
+  .assembly-grid .grid-line{ position:absolute; background:rgba(124,92,255,0.35); }
+  .assembly-grid .grid-line.h{ left:0; right:0; height:1px; }
+  .assembly-grid .grid-line.v{ top:0; bottom:0; width:1px; }
+
+  .piece{
+    background-repeat:no-repeat;
+    border-radius:3px;
+    cursor:grab;
+    position:relative;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+    touch-action:none;
+    transition: box-shadow 0.12s ease, transform 0.1s ease;
+  }
+  .piece:hover{ box-shadow:0 0 0 2px var(--accent-2), 0 2px 6px rgba(0,0,0,0.4); transform: scale(1.05); }
+  .piece.dragging{
+    position:fixed !important;
+    z-index:9999;
+    cursor:grabbing;
+    box-shadow:0 10px 24px rgba(0,0,0,0.6);
+    opacity:0.95;
+    transform: scale(1.08);
+  }
+  .piece.placed-zone{ position:absolute; }
+  .piece.correct{
+    box-shadow:0 0 0 2px rgba(51,209,122,0.6);
+    cursor:default;
+    transform: scale(1) !important;
+    animation: celebratePlaced 0.3s ease-out;
+  }
+  @keyframes celebratePlaced {
+    0% { transform: scale(1.1); filter: brightness(1.4); }
+    100% { transform: scale(1); filter: brightness(1); }
+  }
+
+  .piece-magnifier{
+    position:fixed; right:20px; bottom:20px; width:150px; height:150px;
+    border-radius:14px; border:2px solid var(--accent);
+    box-shadow:var(--shadow); background-color:var(--bg-0);
+    background-repeat:no-repeat;
+    display:none; z-index:10000; pointer-events:none;
+    animation: popMagnifier 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes popMagnifier {
+    from { opacity: 0; transform: scale(0.8); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .piece-magnifier.show{ display:block; }
+  .piece-magnifier::after{
+    content:"Aperçu"; position:absolute; top:-10px; left:10px;
+    background:var(--accent); color:#fff; font-size:10px; font-weight:700;
+    padding:2px 8px; border-radius:6px; letter-spacing:0.5px; text-transform:uppercase;
+  }
+
+  .win-banner{
+    display:none; text-align:center; margin-top:12px; padding:14px;
+    border-radius:12px; background:rgba(51,209,122,0.12);
+    border:1px solid rgba(51,209,122,0.4); color:var(--success); font-weight:700; font-size:16px;
+    animation: winPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes winPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  .empty-play{ text-align:center; color:var(--text-1); padding:60px 20px; font-size:14px; }
+
+  .lib-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:18px; }
+  .lib-item{
+    position:relative; border-radius:12px; overflow:hidden;
+    border:1px solid rgba(255,255,255,0.08); cursor:pointer;
+    background:var(--bg-0); aspect-ratio:1/1; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .lib-item:hover, .lib-item:focus-visible{ transform:translateY(-5px); border-color:rgba(124,92,255,0.5); box-shadow: var(--shadow); }
+  .lib-item img{ width:100%;height:100%;object-fit:cover;display:block; transition: transform 0.3s ease; }
+  .lib-item:hover img { transform: scale(1.05); }
+  .lib-item .meta{
+    position:absolute; left:0; right:0; bottom:0;
+    background:linear-gradient(0deg, rgba(0,0,0,0.75), transparent);
+    padding:8px 10px 6px; font-size:12px; color:#fff; z-index:2;
+  }
+  .lib-item .meta b{display:block;font-size:12.5px;}
+  .lib-item .del-btn{
+    position:absolute; top:8px; right:8px; width:30px;height:30px; border-radius:50%;
+    background:rgba(20,20,25,0.75); border:1px solid rgba(255,255,255,0.15); color:#ff5c72;
+    display:flex;align-items:center;justify-content:center; font-size:16px;
+    opacity:0; transform:scale(0.8); transition: all 0.2s ease; z-index:3; cursor:pointer;
+  }
+  .lib-item:hover .del-btn, .lib-item:focus-within .del-btn{ opacity:1; transform:scale(1); }
+  .lib-item .del-btn:hover{ background:#ff5c72; color:white; transform: scale(1.1); }
+  .empty-msg{ color:var(--text-1); text-align:center; padding:30px; font-size:14px; }
+
+  /* Modal */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(5,6,10,0.4);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index:20000;
+    align-items:center; justify-content:center; padding:20px;
+    opacity: 0; transition: opacity 0.3s ease;
+  }
+  .modal-overlay.show{ display:flex; opacity: 1; }
+  .modal-box{
+    background:linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    border:1px solid rgba(255,255,255,0.08); border-radius:var(--radius);
+    box-shadow:var(--shadow); max-width:480px; width:100%;
+    padding:28px 26px; position:relative; text-align:center;
+    transform: scale(0.9) translateY(20px); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  .modal-overlay.show .modal-box { transform: scale(1) translateY(0); }
+  .modal-box h2{ margin:0 0 12px; font-size:20px; }
+  .modal-box p{ margin:0 0 24px; color:var(--text-1); font-size:14px; line-height:1.5; }
+  .modal-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .modal-actions button{ min-width:120px; }
+
+  /* Settings Modal */
+  .settings-content h3{ margin:0 0 16px; font-size:16px; }
+  .settings-row{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:14px 0; border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .settings-row:last-child{ border-bottom:none; }
+  .settings-label{ font-size:14px; color:var(--text-1); }
+  .toggle-switch{
+    width:50px; height:28px; border-radius:14px;
+    background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.1);
+    cursor:pointer; position:relative; transition:all 0.2s ease;
+  }
+  .toggle-switch.on{ background:var(--accent); border-color:var(--accent); }
+  .toggle-switch::after{
+    content:''; position:absolute; width:24px; height:24px; border-radius:50%;
+    background:white; top:2px; left:2px; transition:left 0.2s ease;
+  }
+  .toggle-switch.on::after{ left:24px; }
+
+  .stats-box{
+    background:rgba(124,92,255,0.1); border:1px solid rgba(124,92,255,0.3);
+    border-radius:12px; padding:16px; margin-top:16px;
+  }
+  .stats-box .stat-item{
+    display:flex; justify-content:space-between; padding:8px 0;
+    font-size:14px;
+  }
+  .stats-box .stat-value{ font-weight:700; color:var(--accent); }
+
+  @media (max-width:1024px){
+    .wrap{ padding:24px 16px 80px; }
+    .preview-row{ gap:18px; }
+    .card{ padding:28px; }
+  }
+
+  @media (max-width:780px){
+    header{ align-items:flex-start; }
+    .logo{ font-size:20px; }
+    .subtitle{ display:none; }
+    .tabs{ gap:6px; flex-wrap:wrap; padding-bottom:6px; }
+    .tab-btn{ padding:10px 12px; font-size:13px; flex:1 1 calc(50% - 6px); text-align:center; }
+    .card{ padding:22px; }
+    .dropzone{ padding:28px 20px; }
+    .preview-row{ flex-direction:column; align-items:stretch; }
+    .preview-thumb{ width:min(220px, 100%); height:auto; aspect-ratio:1/1; }
+    .diffs{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
+    .play-top{ align-items:flex-start; }
+    .stats{ gap:8px 12px; }
+    .actions{ justify-content:flex-start; width:100%; }
+    .btn-primary, .btn-secondary, .btn-ghost{ width:100%; justify-content:center; }
+    .play-section{ min-height:auto; }
+    .play-content{ padding:0; }
+    .tray-panel{ max-height:140px; min-height:90px; }
+    .tray-panel.expanded{ max-height:min(40vh, 360px); }
+    .assembly-wrap{ overflow:auto; padding:6px 0; }
+    .piece-magnifier{ width:100px;height:100px; right:10px; bottom:10px; }
+  }
+
+  @media (max-width:560px){
+    .wrap{ padding:18px 12px 70px; }
+    .logo{ font-size:18px; gap:8px; }
+    .header-right{ flex-direction:column; align-items:stretch; }
+    .tabs{ gap:4px; }
+    .tab-btn{ flex-basis:100%; }
+    .card{ padding:18px; border-radius:14px; }
+    .dropzone{ border-radius:10px; padding:22px 16px; }
+    .dropzone .txt{ font-size:14px; }
+    .diffs{ grid-template-columns:1fr 1fr; gap:8px; }
+    .diff-opt{ padding:12px 10px; }
+    .stats{ flex-direction:column; gap:6px; }
+    .play-header{ margin-bottom:16px; }
+    .progress-bar{ margin-top:12px; }
+    .tray-header{ align-items:flex-start; }
+    .lib-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+    .empty-play{ padding:40px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo"><span class="dot"></span> PuzzleForge</div>
+    <div class="header-right">
+      <div class="subtitle">Version Desktop</div>
+      <button class="settings-btn" id="settingsBtn" title="Paramètres">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82A1.65 1.65 0 0 0 2.81 15H2.7a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.36 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Étapes PuzzleForge">
+    <button type="button" class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-create" id="tabbtn-create" data-tab="create">1. Créer</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-play" id="tabbtn-play" data-tab="play" disabled>2. Jouer</button>
+    <button type="button" class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-library" id="tabbtn-library" data-tab="library">3. Bibliothèque</button>
+  </div>
+
+  <!-- TAB: Créer -->
+  <div class="tab-content active" id="tab-create" role="tabpanel" aria-labelledby="tabbtn-create">
+    <div class="card">
+      <h2><span class="num">1</span> Importer une image</h2>
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="icon-wrap">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.8;" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+        </div>
+        <div class="txt"><b>Cliquez</b> ou glissez une image ici</div>
+      </label>
+      <div class="preview-row" id="previewRow" style="display:none;">
+        <div class="preview-thumb"><img id="previewImg" alt="Aperçu de l'image importée"></div>
+        <div class="diffs" id="diffs" role="radiogroup" aria-label="Difficulté du puzzle">
+          <div class="diff-opt" data-size="4" role="radio" aria-checked="false" tabindex="0"><div class="grid-size">4×4</div><div class="grid-label">Facile</div></div>
+          <div class="diff-opt" data-size="6" role="radio" aria-checked="true" tabindex="0"><div class="grid-size">6×6</div><div class="grid-label">Moyen</div></div>
+          <div class="diff-opt" data-size="8" role="radio" aria-checked="false" tabindex="0"><div class="grid-size">8×8</div><div class="grid-label">Difficile</div></div>
+          <div class="diff-opt" data-size="10" role="radio" aria-checked="false" tabindex="0"><div class="grid-size">10×10</div><div class="grid-label">Expert</div></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn-primary" id="generateBtn" disabled>
+          <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          Générer le puzzle
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Jouer -->
+  <div class="tab-content" id="tab-play" role="tabpanel" aria-labelledby="tabbtn-play">
+    <div id="playEmpty" class="empty-play">Aucun puzzle en cours. Rendez-vous dans l'onglet <b>Créer</b> ou <b>Bibliothèque</b> pour en démarrer un.</div>
+    <div id="playContent" style="display:none;" class="play-section">
+      <div class="play-header">
+        <div class="play-top">
+          <div class="stats">
+            <div>Essais : <b id="movesCount">0</b></div>
+            <div>Temps : <b id="timeCount">00:00</b></div>
+            <div>Placées : <b id="placedCount">0</b>/<span id="totalCount">0</span></div>
+            <div>Difficulté : <b id="diffLabel">—</b></div>
+          </div>
+          <div class="actions" style="margin:0;gap:8px;">
+            <button type="button" class="btn-ghost" id="guideBtn" title="Aperçu" aria-label="Afficher l'aperçu de l'image complète">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            </button>
+            <button type="button" class="btn-secondary" id="quitBtn" title="Quitter" aria-label="Quitter le puzzle en cours">
+              <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+          </div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+
+      <div class="play-content">
+        <div class="tray-panel" id="trayPanel">
+          <div class="tray-header">
+            <h3>Pièces restantes <span id="trayCount">(0)</span></h3>
+            <button type="button" class="btn-ghost" id="expandTrayBtn" aria-expanded="false">Agrandir</button>
+          </div>
+          <div class="tray" id="tray"></div>
+        </div>
+        <div class="assembly-wrap">
+          <div class="assembly-zone" id="assemblyZone">
+            <div class="assembly-guide" id="assemblyGuide" style="display:none;"></div>
+            <div class="assembly-grid" id="assemblyGrid"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="win-banner" id="winBanner" role="status">
+        <svg class="icon-svg" style="width:1.2em;height:1.2em;margin-right:6px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+        Puzzle résolu ! Bravo, en <span id="winMoves"></span> essais et <span id="winTime"></span>.
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Bibliothèque -->
+  <div class="tab-content" id="tab-library" role="tabpanel" aria-labelledby="tabbtn-library">
+    <div class="card">
+      <h2><span class="num">3</span> Ma bibliothèque</h2>
+      <div class="lib-grid" id="libGrid"></div>
+      <div class="empty-msg" id="emptyMsg" style="display:none;">Aucun puzzle enregistré pour le moment. Générez et jouez des puzzles pour en ajouter à votre bibliothèque !</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="piece-magnifier" id="pieceMagnifier" aria-hidden="true"></div>
+
+<!-- Modal Confirmation Suppression -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box">
+    <h2>Supprimer ce puzzle ?</h2>
+    <p>Cette action est définitive. Tu ne pourras pas récupérer ce puzzle.</p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="deleteCancelBtn">Annuler</button>
+      <button class="btn-danger" id="deleteConfirmBtn">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Paramètres -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-box">
+    <h2>Paramètres</h2>
+    <div class="settings-content">
+      <div class="settings-row">
+        <span class="settings-label">Affichage sur Discord</span>
+        <div class="toggle-switch" id="discordToggle"></div>
+      </div>
+    </div>
+    <div class="stats-box">
+      <div class="stat-item">
+        <span>Nombre de puzzles</span>
+        <span class="stat-value" id="statsCount">0</span>
+      </div>
+      <div class="stat-item">
+        <span>Stockage utilisé</span>
+        <span class="stat-value" id="statsSize">0 MB</span>
+      </div>
+    </div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn-primary" id="settingsCloseBtn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
